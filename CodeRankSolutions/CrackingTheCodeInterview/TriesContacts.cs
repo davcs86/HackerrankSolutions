@@ -7,48 +7,65 @@ using System.Threading.Tasks;
 
 namespace HackerrankSolutions.CrackingTheCodeInterview
 {
-
+    class Node
+    {
+        public int data = 1;
+        public Dictionary<char, Node> children = new Dictionary<char, Node>();
+        public Node InsertChildren(char letter)
+        {
+            Node childNode;
+            var hasValue = children.TryGetValue(letter, out childNode);
+            if (hasValue)
+            {
+                childNode.data++;
+            }
+            else
+            {
+                childNode = new Node();
+                children.Add(letter, childNode);
+            }
+            return childNode;
+        }
+    }
     public class TriesContacts
     {
-        static readonly ConcurrentDictionary<string, int> Letters = new ConcurrentDictionary<string, int>();
-
-        static int _countCoincidences(string token)
-        {
-            int count;
-            Letters.TryGetValue(token, out count);
-            return count;
-        }
-        
-        static void _addToLetters(char[] token)
-        {
-            for (var i = 0; i < token.Length; i++)
-            {
-                string str = "";
-                for (var j = i; j < token.Length; j++)
-                {
-                    str += token[j].ToString();
-                    Letters.AddOrUpdate(str, d => 1, (d, u) => u + 1);
-                }
-            }
-        }
-
-        static void _addToLetters(string token)
-        {
-            _addToLetters(token.ToCharArray());
-        }
-
         public int[] Solve(int n, string[] orders)
         {
             var results = new List<int>();
+            Node root = new Node();
             for (int i = 0; i < n; i++)
             {
                 var order = orders[i].Split(' ');
+                string contact = order[1];
+                var currNode = root;
                 if (order[0] == "add")
                 {
-                    _addToLetters(order[1]);
+                    // add word
+                    for (int j = 0; j < contact.Length; j++)
+                    {
+                        currNode = currNode.InsertChildren(contact[j]);
+                    }
                 } else if (order[0] == "find")
                 {
-                    results.Add(_countCoincidences(order[1]));
+                    // find partial
+                    var found = true;
+                    var times = int.MaxValue;
+                    for (int j = 0; j < contact.Length; j++)
+                    {
+                        var hasValue = currNode.children.TryGetValue(contact[j], out currNode);
+                        if (!hasValue)
+                        {
+                            found = false;
+                            break;
+                        }
+                        else
+                        {
+                            times = Math.Min(times, currNode.data);
+                        }
+                    }
+                    times = found ? times : 0;
+                    Console.WriteLine(times);
+                    results.Add(times);
                 }
             }
             return results.ToArray();
